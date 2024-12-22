@@ -22,11 +22,55 @@ typedef struct {
  * Function: console
  * -----------------
  *
- *handles user terminal input
+ *	Handles user terminal input
  *
- *consoleStruct: CONSOLE pointer casted to void pointer
+ *	consoleStruct: CONSOLE pointer casted to void pointer
  *
- *returns: NULL on exit
+ *	returns: NULL on exit
  */
 extern void *console(void *consoleStruct);
+
+/**
+ * Enum: LOG_TYPE
+ *	--------------
+ *
+ *	Used exclusively by logger function
+ *
+ * I think that value names are self explanatory
+ *
+ * so there is no point in explaining them
+ */
+
+typedef enum {
+   ERROR = 0,
+   INFO = 1,
+} LOG_TYPE;
+
+/**
+ * Function: logger
+ * ---------------
+ *
+ *	Displays and logs message
+ *
+ *	msg: string that will be logged/displayed
+ *
+ *	type: type of logged/displayed message
+ *
+ *	display: if 0 message will not be displayed in terminal
+ *
+ */
+extern void logger(const char *msg, const LOG_TYPE type, const char display);
+
+/**
+ * Function setLogFile
+ * -------------------
+ *
+ *	opens/cloases log file
+ *
+ *	fileName: name of desired log file
+ *
+ *	if set to NULL log file will be closed
+ *
+ */
+extern void setLogFile(const char *fileName);
 #endif

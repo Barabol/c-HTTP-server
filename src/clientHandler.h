@@ -6,19 +6,19 @@
  * Structure: C_HANDLER
  * --------------------
  *
- *used by clientHandler function
+ *	Used by clientHandler function
  *
- *socket: [int] client connection
+ *	socket: [int] client connection
  *
- *addr: [sockaddr_in] client connection
+ *	addr: [sockaddr_in] client connection
  *
- *used: [unsigned char] parameter used for identifying usage of connection
+ *	used: [unsigned char] parameter used for identifying usage of connection
  *
- *1(or other than 0): used
+ *	1(or other than 0): used
  *
- *0: free
+ *	0: free
  *
- *id: [unsigned long] passed just because
+ *	id: [unsigned long] passed just because
  *
  */
 typedef struct {
@@ -32,11 +32,11 @@ typedef struct {
  * Function: clientHandler
  * -----------------------
  *
- *handles singular connection
+ *	Handles singular connection
  *
- *handleStruct: C_HANDLER pointer casted to void pointer
+ *	handleStruct: C_HANDLER pointer casted to void pointer
  *
- *returns: NULL on exit
+ *	returns: NULL on exit
  */
 void *clientHandler(void *handlerStruct);
 #endif
