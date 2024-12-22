@@ -44,6 +44,7 @@ extern void *console(void *consoleStruct);
 typedef enum {
    ERROR = 0,
    INFO = 1,
+   SEVERE = 2,
 } LOG_TYPE;
 
 /**

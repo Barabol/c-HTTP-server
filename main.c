@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/socket.h>
+#include <unistd.h>
 
 int main(int argc, char **argv) {
    // scope by setFile był zwolniony
@@ -15,7 +16,7 @@ int main(int argc, char **argv) {
       char setFile = 0;
       for (int x = 1; x < argc; x++) {
          if (argv[x][0] == '-' && argv[x][1] == 'l') {
-            if ((x + 1) < argc && argv[x+1][0] != ' ') {
+            if ((x + 1) < argc && argv[x + 1][0] != ' ') {
                setLogFile(argv[x + 1]);
                setFile = 1;
             } else {
@@ -37,7 +38,7 @@ int main(int argc, char **argv) {
    serverSocket = socket(AF_INET, SOCK_STREAM, 0);
 
    if (serverSocket < 0) {
-      logger("Cannot start socket", ERROR, 1);
+      logger("Cannot start socket", SEVERE, 1);
       setLogFile(NULL);
       return 1;
    }
@@ -46,16 +47,25 @@ int main(int argc, char **argv) {
    address.sin_addr.s_addr = INADDR_ANY;
    address.sin_port = htons(PORT);
 
-   if (bind(serverSocket, (struct sockaddr *)&address, sizeof(address)) < 0) {
-      logger("Cannot bind socket", ERROR, 1);
+#ifdef REUSE_ADDR_AND_PORT
+   int optVal = 1;
+   if (setsockopt(serverSocket, SOL_SOCKET, SO_REUSEPORT | SO_REUSEADDR,
+                  &optVal, sizeof(optVal))) {
+      logger("Cannot set socket options", SEVERE, 1);
       setLogFile(NULL);
       return 3;
    }
-
-   if (listen(serverSocket, MAX_CONNECTIONS) < 0) {
-      logger("Cannot start listener", ERROR, 1);
+#endif
+   if (bind(serverSocket, (struct sockaddr *)&address, sizeof(address)) < 0) {
+      logger("Cannot bind socket", SEVERE, 1);
       setLogFile(NULL);
       return 4;
+   }
+
+   if (listen(serverSocket, MAX_CONNECTIONS) < 0) {
+      logger("Cannot start listener", SEVERE, 1);
+      setLogFile(NULL);
+      return 5;
    }
 
    pthread_t consoleThread;
@@ -75,6 +85,7 @@ int main(int argc, char **argv) {
    for (int x = 0; x < MAX_CONNECTIONS; x++)
       cliHandler[x].used = 0;
 
+   logger("Server started", INFO, 1);
    while (status) {
       clientSocket =
           accept(serverSocket, (struct sockaddr *)&clientAddress, &cliSocLen);
@@ -87,27 +98,36 @@ int main(int argc, char **argv) {
          logger("Cannot establish connection to client", ERROR, 1);
          continue;
       }
-
-      for (int x = 0; x < MAX_CONNECTIONS; x++) {
-         if (cliHandler[x].used == 0) {
-            cliHandler[x].addr = clientAddress;
-            cliHandler[x].socket = clientSocket;
-            cliHandler[x].id = x;
-            pthread_create(&thread[x], NULL, clientHandler,
-                           (void *)&(cliHandler[x]));
-            break;
+      { // kolejny scope czemu nie?
+         int connection;
+         for (int connection = 0; connection < MAX_CONNECTIONS; connection++) {
+            if (cliHandler[connection].used == 0) {
+               cliHandler[connection].addr = clientAddress;
+               cliHandler[connection].socket = clientSocket;
+               cliHandler[connection].id = connection;
+               pthread_create(&thread[connection], NULL, clientHandler,
+                              (void *)&(cliHandler[connection]));
+               connection = -1;
+               break;
+            }
+         }
+         // chyba redundantne?
+         if (connection == -1) {
+            logger("All threads are used, dropping connection", ERROR, 1);
+            close(clientSocket);
          }
       }
    }
 
    logger("Stopping server", INFO, 1);
+   close(serverSocket);
    for (int x = 0; x < MAX_CONNECTIONS; x++) {
       if (cliHandler[x].used) {
-         printf("Killing Thread: %d\n", x);
          pthread_detach(thread[x]);
       }
    }
+   // na wszelki wypadek
    pthread_join(consoleThread, 0);
-   // zamknięcie zapisu do pliku
    setLogFile(NULL);
+   return 0;
 }
