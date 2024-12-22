@@ -1,37 +1,15 @@
-#include <arpa/inet.h>
+#include "./src/clientHandler.h"
+#include "./src/console.h"
+#include "src/compilationFlags.h"
 #include <asm-generic/socket.h>
 #include <netinet/in.h>
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/socket.h>
-#define PORT 80
-unsigned char status;
-void *clientHandler(void *args) {
-   // jestem na 100% pewien że nie zamykam połączenia
-   int clientSocket = (int)(args);
-   char buff[255];
-   inet_ntop(AF_INET, &clientSocket, buff, sizeof(buff));
-   printf("Connection form IP: %s\n", buff);
-   return NULL;
-}
-#define RED "\033[31m"
-#define CLEAR "\033[0m"
-void *console() {
-   char buff[255];
-	// obowiązkowe GOTO 
-loop:
-   scanf("%s", buff);
-   printf(RED);
-   printf("Res: %s\n", buff);
-   printf(CLEAR);
-   if (buff[0] == 'q') {
-      status = 0;
-      return NULL;
-   }
-   goto loop;
-}
+
 int main(int argc, char **argv) {
+   unsigned char status;
    int serverSocket;
    struct sockaddr_in address;
 
@@ -48,36 +26,59 @@ int main(int argc, char **argv) {
       return 3;
    }
 
-   if (listen(serverSocket, 10) < 0) {
+   if (listen(serverSocket, MAX_CONNECTIONS) < 0) {
       return 4;
    }
 
    pthread_t consoleThread;
-   pthread_create(&consoleThread, NULL, console, NULL);
+   CONSOLE cStruct;
+   cStruct.status = &status;
+   cStruct.serverSocket = serverSocket;
+   pthread_create(&consoleThread, NULL, console, &cStruct);
 
-   pthread_t thread;
+   pthread_t thread[MAX_CONNECTIONS];
    int clientSocket;
    socklen_t cliSocLen = sizeof(clientSocket);
    struct sockaddr_in clientAddress;
 
    status = 1;
+
+   C_HANDLER cliHandler[MAX_CONNECTIONS];
+
+   for (int x = 0; x < MAX_CONNECTIONS; x++)
+      cliHandler[x].used = 0;
+
    while (status) {
       clientSocket =
           accept(serverSocket, (struct sockaddr *)&clientAddress, &cliSocLen);
+
+      // na wszelki wypadek chyba nie jest potrzebne ale może się przydać
+      if (!status)
+         break;
+
       if (clientSocket < 0) {
          puts("he?");
          continue;
       }
-      // PRAWDOPODOBNIE będę musiał podmienić castowanie int -> void* na
-      // wskaźnik do ciekawej strukturki by móc przekazać więcej ciekawych
-      // itemków (-:
-      pthread_create(&thread, NULL, clientHandler, (void *)clientSocket);
 
-      //-----------------------------DO-WYWALENIA-POTEM----------------
-      char buff[255]; // nwm czemu wypisuje źle na początku ip
-      inet_ntop(AF_INET, &(clientAddress.sin_addr), buff, sizeof(buff));
-      printf("Connection form IP: %s\n", buff);
-      //---------------------------------------------------------------
+      for (int x = 0; x < MAX_CONNECTIONS; x++) {
+         if (cliHandler[x].used == 0) {
+            cliHandler[x].addr = clientAddress;
+            cliHandler[x].socket = clientSocket;
+            cliHandler[x].id = x;
+            pthread_create(&thread[x], NULL, clientHandler,
+                           (void *)&(cliHandler[x]));
+            break;
+         }
+      }
    }
+
+   for (int x = 0; x < MAX_CONNECTIONS; x++) {
+      if (cliHandler[x].used) {
+         printf("Killing Thread: %d\n", x);
+         pthread_detach(thread[x]);
+      }
+   }
+
    pthread_join(consoleThread, 0);
 }
