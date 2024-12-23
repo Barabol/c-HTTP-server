@@ -41,10 +41,12 @@ void logger_(const char *msg, const LOG_TYPE type, const char display,
        "ERROR",
        "INFO",
        "SEVERE",
+       "SECURITY",
    };
    static char Colors[][10] = {
        RED,
        BLUE,
+       RED,
        RED,
    };
 
@@ -94,10 +96,15 @@ void logger_(const char *msg, const LOG_TYPE type, const char display,
 void logger(const char *msg, const LOG_TYPE type, const char display) {
    logger_(msg, type, display, NULL);
 }
-void setLogFile(const char *fileName) {
+void setLogFile(const char *fileName, int override) {
    static FILE *file;
    if (fileName) {
-      file = fopen(fileName, "w+");
+      char *option;
+      if (override)
+         option = "w+";
+      else
+         option = "a+";
+      file = fopen(fileName, option);
       logger_("", ERROR, 0, file);
       logger("Started logging to file", INFO, 1);
    } else if (file) {

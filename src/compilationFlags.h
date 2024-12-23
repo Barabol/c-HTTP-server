@@ -70,7 +70,7 @@
  *
  * DEFAULT: "html"
  */
-#define ALLOWED_EXTENSION "html" 
+#define ALLOWED_EXTENSION "html"
 
 //-----------------------------------------------//
 
@@ -82,6 +82,8 @@
  *
  * less command does not support /033[nm colors
  * but more command does
+ *
+ * DEFAULT: enabled
  */
 #define COLOR_IN_LOG_FILES
 
@@ -90,37 +92,45 @@
  * there will be shown full HTTP request
  * in console
  * (it will not be logged)
+ *
+ * DEFAULT: disabled
  */
-#define SHOW_REQUEST
+// #define SHOW_REQUEST
 
 /**
  * If this option is defined
  * server socket will set flags
  * for it to be able to quickly
  * be reused
+ *
+ * DEFAULT: enabled
  */
 #define REUSE_ADDR_AND_PORT
 
 /**
-* If this option is defined
-* client will be able to
-* access hidden files
-* eg:
-*
-* - .config
-* - .hiddendir/index.html
-*/
-//#define ALLOW_HIDDEN_FILES
+ * If this option is defined
+ * client will be able to
+ * access hidden files
+ * eg:
+ *
+ * - .config
+ * - .hiddendir/index.html
+ *
+ * DEFAULT: disabled
+ */
+// #define ALLOW_HIDDEN_FILES
 
 /**
-* if this option is defined 
-* client will be able to use
-* ".." as path
-* eg:
-*
-* ../etc
-*/
-//#define ALLOW_DOUBLE_DOT_OPERATOR
+ * if this option is defined
+ * client will be able to use
+ * ".." as path
+ * eg:
+ *
+ * ../etc
+ *
+ * DEFAULT: disabled
+ */
+// #define ALLOW_DOUBLE_DOT_OPERATOR
 
 //-----------------------------------------------//
 

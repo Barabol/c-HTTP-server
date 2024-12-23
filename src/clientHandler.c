@@ -164,7 +164,7 @@ void *clientHandler(void *args) {
       }
 
       clientSocket->used = 0;
-      logger(msg, ERROR, 1);
+      logger(msg, SECURITY, 1);
       return NULL;
    }
 
@@ -181,7 +181,7 @@ void *clientHandler(void *args) {
             sprintf(msg, "Thread #%lu received illegal path length from %s",
                     clientSocket->id, ip);
             clientSocket->used = 0;
-            logger(msg, ERROR, 1);
+            logger(msg, SECURITY, 1);
             return NULL;
          }
          for (int x = 0; x < fileLen; x++)

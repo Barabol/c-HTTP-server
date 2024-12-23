@@ -15,6 +15,8 @@ i będzie pięknie
 
 - dodać ustawienie katalogu bazowego (chyba mogę zmienić położenie w argv\[0\] i powinno działać)
 
+- refaktoryzacja Makefile'a by wyglądał "profesjonalnie"
+
 ## Polecenia
 - drop \[id\]
 - h/help

@@ -17,10 +17,10 @@ int main(int argc, char **argv) {
       for (int x = 1; x < argc; x++) {
          if (argv[x][0] == '-' && argv[x][1] == 'l') {
             if ((x + 1) < argc && argv[x + 1][0] != ' ') {
-               setLogFile(argv[x + 1]);
+               setLogFile(argv[x + 1],1);
                setFile = 1;
             } else {
-               setLogFile(DEFAULT_ERROR_FILE);
+               setLogFile(DEFAULT_ERROR_FILE,1);
                setFile = 1;
                logger("There was no file name provided, default file name will "
                       "be chosen",
@@ -29,7 +29,7 @@ int main(int argc, char **argv) {
          }
       }
       if (!setFile)
-         setLogFile(DEFAULT_ERROR_FILE);
+         setLogFile(DEFAULT_ERROR_FILE,1);
    }
    unsigned char status;
    int serverSocket;
@@ -39,7 +39,7 @@ int main(int argc, char **argv) {
 
    if (serverSocket < 0) {
       logger("Cannot start socket", SEVERE, 1);
-      setLogFile(NULL);
+      setLogFile(NULL,1);
       return 1;
    }
 
@@ -52,19 +52,19 @@ int main(int argc, char **argv) {
    if (setsockopt(serverSocket, SOL_SOCKET, SO_REUSEPORT | SO_REUSEADDR,
                   &optVal, sizeof(optVal))) {
       logger("Cannot set socket options", SEVERE, 1);
-      setLogFile(NULL);
+      setLogFile(NULL,1);
       return 3;
    }
 #endif
    if (bind(serverSocket, (struct sockaddr *)&address, sizeof(address)) < 0) {
       logger("Cannot bind socket", SEVERE, 1);
-      setLogFile(NULL);
+      setLogFile(NULL,1);
       return 4;
    }
 
    if (listen(serverSocket, MAX_CONNECTIONS) < 0) {
       logger("Cannot start listener", SEVERE, 1);
-      setLogFile(NULL);
+      setLogFile(NULL,1);
       return 5;
    }
 
@@ -128,6 +128,6 @@ int main(int argc, char **argv) {
    }
    // na wszelki wypadek
    pthread_join(consoleThread, 0);
-   setLogFile(NULL);
+   setLogFile(NULL,1);
    return 0;
 }

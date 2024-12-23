@@ -41,10 +41,11 @@ extern void *console(void *consoleStruct);
  * so there is no point in explaining them
  */
 
-typedef enum {
+typedef enum : unsigned char {
    ERROR = 0,
    INFO = 1,
    SEVERE = 2,
+   SECURITY = 3,
 } LOG_TYPE;
 
 /**
@@ -72,6 +73,11 @@ extern void logger(const char *msg, const LOG_TYPE type, const char display);
  *
  *	if set to NULL log file will be closed
  *
+ * override: parameter that if set to 0 it will not
+ *
+ * override log file
+ *
+ * else it will
  */
-extern void setLogFile(const char *fileName);
+extern void setLogFile(const char *fileName, int override);
 #endif
