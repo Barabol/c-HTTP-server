@@ -28,16 +28,17 @@
  *
  * 0 if successfully found access point
  *
- * 1 if there wan no access point defined
+ * >=1 if there wan no access point defined
  */
 int getAccessPoint(char *req, char *ap, int *fileIncluded, int *len) {
    unsigned int point = 0;
-   char requestType[10]; // wiem w 7 moge się zmieścić (wliczając \0)
+   char requestType[10] = {0}; // wiem w 7 moge się zmieścić (wliczając \0)
 
-	ap[0]='.';
-   for (int z = 0; req[point] != ' '; point++, z++)
+   ap[0] = '.';
+   for (int z = 0; req[point] != ' '; point++, z++) {
       requestType[z] = req[point];
-   // printf("Request type: %s\n", requestType);
+      // printf("Request type: %s\n", requestType);
+   }
 #ifdef ACCEPT_ONLY
    for (int x = 0; x < 10; x++) {
       if (requestType[x] == 0)
@@ -63,9 +64,6 @@ int getAccessPoint(char *req, char *ap, int *fileIncluded, int *len) {
       if (req[point] == '\\')
          req[point] = '/';
 
-      if (req[point] == '/')
-         lastDirMention = z;
-
 #ifndef ALLOW_DOUBLE_DOT_OPERATOR
       if (req[point] == '.' && lastChar == '.')
          return 2;
@@ -76,27 +74,49 @@ int getAccessPoint(char *req, char *ap, int *fileIncluded, int *len) {
          return 3;
 #endif
 
-      if (req[point] == '.' && lastChar != '.')
-         lastFileMention = z;
       ap[z] = req[point];
 
       lastChar = req[point];
    }
+   for (int y = z, used = 0; y > 0; y--) {
+      if (used == 3)
+         break;
+      if ((used & 1) == 0 && ap[y] == '.') {
+         used |= 1;
+         lastFileMention = y;
+         continue;
+      }
+      if ((used & 2) == 0 && ap[y] == '/') {
+         used |= 2;
+         lastDirMention = y;
+         continue;
+      }
+   }
    if (lastFileMention < lastDirMention)
-      lastFileMention = -1;
-   *fileIncluded = lastFileMention > -1 ? 1 : 0;
-   // printf("LFM: %d,%c\n", *fileIncluded,ap[lastFileMention]);
+      *fileIncluded = 0;
+   else
+      *fileIncluded = 1;
 #ifdef ALLOWED_EXTENSION
    lastFileMention++;
+
+   int flag = 0;
+   const char *Ext = "ico";
+
    for (int x = 0; lastFileMention <= z && lastFileMention != 0;
         lastFileMention++, x++) {
       if (ALLOWED_EXTENSION[x] != ap[lastFileMention])
-         return 4;
+         flag |= 1;
    }
+   for (int x = 0; lastFileMention <= z && lastFileMention != 0;
+        lastFileMention++, x++) {
+      if (Ext[x] != ap[lastFileMention])
+         flag |= 2;
+   }
+   if (flag == 3)
+      return 4;
 #endif
-   printf("Access point: %s, Len %d, ap: %c\n", ap, z, ap[z]);
    *len = z;
-   if (lastChar != '/') {
+   if (lastChar != '/' && *fileIncluded != 1) {
       ap[z] = '/';
       ap[z + 1] = 0;
       (*len)++;
@@ -187,7 +207,7 @@ void *clientHandler(void *args) {
          for (int x = 0; x < fileLen; x++)
             accessPoint[accessPointLen + x] = DEFAULT_FILE_NAME[x];
          accessPoint[accessPointLen + fileLen] = 0;
-			printf("AP: %s\n",accessPoint);
+         printf("AP: %s\n", accessPoint);
       } else {
          close(clientSocket->socket);
          clientSocket->used = 0;
@@ -196,7 +216,8 @@ void *clientHandler(void *args) {
       }
    }
 #endif
-
+   buildResponse(accessPoint, clientSocket);
+   //   buildResponse(accessPoint,clientSocket);
    sleep(1);
    close(clientSocket->socket);
 

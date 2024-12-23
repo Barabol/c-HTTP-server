@@ -9,6 +9,13 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
+int criticalError(const char *errMsg, int errCode) {
+   logger(errMsg, SEVERE, 1);
+   logger("Stopping server due to critical error", INFO, 1);
+   setLogFile(NULL, 1);
+   return errCode;
+}
+
 int main(int argc, char **argv) {
    // scope by setFile był zwolniony
    // potem to przeniose do osobnych funkcnji bo już się syf robi w mainie
@@ -17,19 +24,19 @@ int main(int argc, char **argv) {
       for (int x = 1; x < argc; x++) {
          if (argv[x][0] == '-' && argv[x][1] == 'l') {
             if ((x + 1) < argc && argv[x + 1][0] != ' ') {
-               setLogFile(argv[x + 1],1);
+               setLogFile(argv[x + 1], 1);
                setFile = 1;
             } else {
-               setLogFile(DEFAULT_ERROR_FILE,1);
-               setFile = 1;
+               setLogFile(DEFAULT_ERROR_FILE, 1);
+               setFile = 0;
                logger("There was no file name provided, default file name will "
                       "be chosen",
-                      ERROR, 1);
+                      WARNING, 1);
             }
          }
       }
       if (!setFile)
-         setLogFile(DEFAULT_ERROR_FILE,1);
+         setLogFile(DEFAULT_ERROR_FILE, 1);
    }
    unsigned char status;
    int serverSocket;
@@ -38,9 +45,7 @@ int main(int argc, char **argv) {
    serverSocket = socket(AF_INET, SOCK_STREAM, 0);
 
    if (serverSocket < 0) {
-      logger("Cannot start socket", SEVERE, 1);
-      setLogFile(NULL,1);
-      return 1;
+      return criticalError("Cannot start socket", 1);
    }
 
    address.sin_family = AF_INET;
@@ -51,21 +56,15 @@ int main(int argc, char **argv) {
    int optVal = 1;
    if (setsockopt(serverSocket, SOL_SOCKET, SO_REUSEPORT | SO_REUSEADDR,
                   &optVal, sizeof(optVal))) {
-      logger("Cannot set socket options", SEVERE, 1);
-      setLogFile(NULL,1);
-      return 3;
+      return criticalError("Cannot set socket options", 3);
    }
 #endif
    if (bind(serverSocket, (struct sockaddr *)&address, sizeof(address)) < 0) {
-      logger("Cannot bind socket", SEVERE, 1);
-      setLogFile(NULL,1);
-      return 4;
+      return criticalError("Cannot bind socket", 4);
    }
 
    if (listen(serverSocket, MAX_CONNECTIONS) < 0) {
-      logger("Cannot start listener", SEVERE, 1);
-      setLogFile(NULL,1);
-      return 5;
+      return criticalError("Cannot start listener", 5);
    }
 
    pthread_t consoleThread;
@@ -76,8 +75,9 @@ int main(int argc, char **argv) {
 
    pthread_t thread[MAX_CONNECTIONS];
    int clientSocket;
-   socklen_t cliSocLen = sizeof(clientSocket);
+   socklen_t cliSocLen = 16;
    struct sockaddr_in clientAddress;
+   int connection;
 
    status = 1;
 
@@ -98,25 +98,20 @@ int main(int argc, char **argv) {
          logger("Cannot establish connection to client", ERROR, 1);
          continue;
       }
-      { // kolejny scope czemu nie?
-         int connection;
-         for (int connection = 0; connection < MAX_CONNECTIONS; connection++) {
-            if (cliHandler[connection].used == 0) {
-               cliHandler[connection].addr = clientAddress;
-               cliHandler[connection].socket = clientSocket;
-               cliHandler[connection].id = connection;
-               pthread_create(&thread[connection], NULL, clientHandler,
-                              (void *)&(cliHandler[connection]));
-               connection = -1;
-               break;
-            }
-         }
-         // chyba redundantne?
-         if (connection == -1) {
-            logger("All threads are used, dropping connection", ERROR, 1);
-            close(clientSocket);
+
+      for (connection = 0; connection < MAX_CONNECTIONS; connection++) {
+         if (cliHandler[connection].used == 0) {
+            cliHandler[connection].addr = clientAddress;
+            cliHandler[connection].socket = clientSocket;
+            cliHandler[connection].id = connection;
+            pthread_create(&thread[connection], NULL, clientHandler,
+                           (void *)&(cliHandler[connection]));
+            connection = 0;
+            break;
          }
       }
+      if (connection)
+         logger("All threads are being used", WARNING, 1);
    }
 
    logger("Stopping server", INFO, 1);
@@ -128,6 +123,6 @@ int main(int argc, char **argv) {
    }
    // na wszelki wypadek
    pthread_join(consoleThread, 0);
-   setLogFile(NULL,1);
+   setLogFile(NULL, 1);
    return 0;
 }

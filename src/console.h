@@ -46,6 +46,7 @@ typedef enum : unsigned char {
    INFO = 1,
    SEVERE = 2,
    SECURITY = 3,
+   WARNING = 4,
 } LOG_TYPE;
 
 /**

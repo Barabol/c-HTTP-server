@@ -39,4 +39,26 @@ typedef struct {
  *	returns: NULL on exit
  */
 void *clientHandler(void *handlerStruct);
+
+/**
+ * Function: buildResponse
+ * -----------------------
+ *
+ * Builds and sends response to client
+ *
+ * accessPoint: file path and file name
+ *
+ * clientSocket: C_HANDLER pointer as pointer
+ */
+void buildResponse(const char *accessPoint, C_HANDLER *clientSocket);
+
+/**
+ * Function: sendError
+ * -------------------
+ *
+ * Sends 404 not found
+ *
+ * clientSocket: C_HANDLER pointer as pointer
+ */
+void sendError(C_HANDLER *clientSocket);
 #endif

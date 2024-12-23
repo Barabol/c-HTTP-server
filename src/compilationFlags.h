@@ -68,6 +68,8 @@
 /**
  * Accept only this type of file to be accessed
  *
+ * .ico will not be blocked
+ *
  * DEFAULT: "html"
  */
 #define ALLOWED_EXTENSION "html"

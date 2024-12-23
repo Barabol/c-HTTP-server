@@ -38,16 +38,10 @@ void logger_(const char *msg, const LOG_TYPE type, const char display,
              FILE *file) {
    static FILE *errFile = NULL;
    static char TypeNames[][10] = {
-       "ERROR",
-       "INFO",
-       "SEVERE",
-       "SECURITY",
+       "ERROR", "INFO", "SEVERE", "SECURITY", "WARNING",
    };
    static char Colors[][10] = {
-       RED,
-       BLUE,
-       RED,
-       RED,
+       RED, BLUE, RED, RED, YELLOW,
    };
 
    static time_t rawtime;
@@ -68,7 +62,7 @@ void logger_(const char *msg, const LOG_TYPE type, const char display,
 
    if (!errFile) {
       printf("%s%s[%s|%s]: %sLog file isn't defined or cannot be opened%s\n",
-             Colors[ERROR], BOLD, TypeNames[ERROR], timeStr, WHITE, CLEAR);
+             Colors[WARNING], BOLD, TypeNames[WARNING], timeStr, WHITE, CLEAR);
       return;
    }
    if (strlen(buff) > MAX_CONSOLE_BUFFER_LENGTH - 70) {
