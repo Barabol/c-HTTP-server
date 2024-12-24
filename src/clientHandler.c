@@ -154,8 +154,6 @@ void *clientHandler(void *args) {
    puts(" ");
 #endif
 
-   // dać to na switcha by wypisywało inne wiadomości względem tego co zwraca
-   // getAccessPoint
    int accessPointLen = -1;
    int isFileIncluded = 0;
    int holder =
@@ -217,9 +215,8 @@ void *clientHandler(void *args) {
    }
 #endif
    buildResponse(accessPoint, clientSocket);
-   //   buildResponse(accessPoint,clientSocket);
-   sleep(1);
    close(clientSocket->socket);
+   sleep(1);
 
    clientSocket->used = 0;
    return NULL;
